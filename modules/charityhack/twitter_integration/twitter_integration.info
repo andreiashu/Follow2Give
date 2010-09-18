@@ -1,0 +1,4 @@
+name = Twitter Integration
+description = TW
+core = 6.x
+package = Follow2Give

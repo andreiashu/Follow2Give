@@ -1,0 +1,120 @@
+<?php
+
+define('CONSUMER_KEY', 'GyTwTt45Qz83mVWSeET5Q');
+define('CONSUMER_SECRET', 'GtH2e65dB3IJCJjas9QNpFBDOTkgWRmc0KPMIHGg');
+
+define('WEBSITE_URL', 'http://dev.charityhack.lan');
+
+define('FRIENDSHIP_CREATE_URL', '/friendships/create.json');
+
+function twitter_integration_menu() {
+  $items['twitter-login'] = array(
+    'title' => 'Twitter Login',
+    'page callback' => 'twitter_integration_login_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+  $items['store-twitter-credentials'] = array(
+    'title' => 'Store Twitter Credentials',
+    'page callback' => 'store_twitter_credentials_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+  $items['twitter-loggedin'] = array(
+    'title' => 'Great you successfully logged in',
+    'page callback' => 'twitter_integration_loggedin_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+
+  $items['twitter-stored-data/%user'] = array(
+    'title' => 'Twitter Stored Data Test',
+    'page callback' => 'twitter_integration_stored_data_test_callback',
+    'type' => MENU_CALLBACK,
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+
+
+  return $items;
+}
+
+function twitter_integration_loggedin_callback() {
+  if(!isset($_GET['oauth_token'])) {
+    drupal_set_message(t('You didn\'t login'));
+    drupal_goto('twitter-login');
+  }
+
+  twitter_integration_include();
+
+  $twitterObj = new EpiTwitter(CONSUMER_KEY, CONSUMER_SECRET);
+  $twitterObj->setToken($_GET['oauth_token']);
+  try {
+    $token = $twitterObj->getAccessToken(array('oauth_verifier' => $_GET['oauth_verifier']));
+dpm($token, 'token');
+    $twitterObj->setToken($token->oauth_token, $token->oauth_token_secret);
+    $response = $twitterObj->get_accountVerify_credentials();
+
+    //d_f2g_twitter_tokens
+    $follow_response = $twitterObj->post(FRIENDSHIP_CREATE_URL, array('follow' => 'yes', 'screen_name' => 'Follow2Give'));
+
+    //db_query("INSERT INTO {f2g_twitter_tokens} ()");
+    dpm($follow_response, 'follow_response');
+
+    /*
+    try {
+      $account = user_external_load($token->user_id);
+      if (isset($account->uid)) { // current user
+        dpm('USER ALREADY ON THE WEBSITE');
+        //user_external_login($account);
+        global $user;
+        $user = $account;
+
+        //update_gotw_account($response, $token);
+      } else {   // new gotwitr user
+        new_f2g_account($response, $token);
+      }
+    } catch (EpiException $e) {
+      drupal_set_message("Twitter has an error - please try again: " . $e->getMessage());
+      twitter_log_error($user->uid, 'TwitterValidate', $e);
+    }
+     * 
+     */
+    dpm($response, 'get_accountVerify_credentials');
+    setcookie('oauth_token', $token->oauth_token);
+    setcookie('oauth_token_secret', $token->oauth_token_secret);
+  }
+  catch (Exception $e) {
+    dpm($e);
+  }
+
+  return l(t('Twitter Login page'), 'twitter-login');
+}
+
+function new_f2g_account($response, $token) {
+//  if($existing_user = user_load(array('name' => $response['screen_name']))) {
+//    user_delete(array(), $existing_user->uid);
+//  }
+
+  global $user;
+  $edit = array(
+    'name' => $response['screen_name'],
+    'pass' => user_password(),
+    'init' => $response['screen_name'],
+    'status' => 1,
+    "authname_twitter" => $token->user_id,
+    'access' => time(),
+  );
+  $account = user_save('', $edit);
+  dpm($account, 'Newly saved user');
+  $user = $account;
+  insert_f2g_account($account, $token);
+}
+
+function insert_f2g_account($account, $token) {
+  db_query("INSERT INTO {authmap} (uid, authname, module) VALUES (%d, '%s','twitter_integration')", $account->uid, $token->user_id);
+}
