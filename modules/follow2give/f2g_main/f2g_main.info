@@ -1,0 +1,4 @@
+name = F2G Main
+description = F2G Main
+core = 6.x
+package = Follow2Give

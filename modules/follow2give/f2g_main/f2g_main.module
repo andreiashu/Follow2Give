@@ -1,0 +1,99 @@
+<?php
+
+define('SPONSOR_ROLE_ID', 3);
+define('CHARITY_ROLE_ID', 4);
+
+function f2g_main_menu() {
+  $items['charity-register'] = array(
+    'title' => 'Register as a charity',
+    'page callback' => 'charity_register_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+  $items['charity-register/complete'] = array(
+    'title' => 'Register as a charity',
+    'page callback' => 'charity_register_complete_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+
+
+  $items['sponsor-register'] = array(
+    'title' => 'Register as a sponsor',
+    'page callback' => 'sponsor_register_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+  $items['sponsor-register/complete'] = array(
+    'title' => 'Registered as a sponsor',
+    'page callback' => 'sponsor_register_complete_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+function charity_register_callback() {
+  require_once(drupal_get_path('module', 'twitter_integration') . '/twitter_integration.common.inc');
+  $authorize_url = twitter_generate_authorizeUrl('charity-register/complete');
+  return l(t('Login with Twitter to register as a CHARITY'), $authorize_url, array('external' => TRUE));
+}
+
+function charity_register_complete_callback() {
+  require_once(drupal_get_path('module', 'twitter_integration') . '/twitter_integration.common.inc');
+
+  $account = twitter_return_load_user(CHARITY_ROLE_ID);
+
+  if(!$node = node_load(array('type' => 'charity', 'uid' => $account->uid))) {
+    // save token relationship
+    twitter_user_save_oauth_token($account->uid, $account->twitter_token);
+
+    // save charity node
+    $node = (object) array(
+      'title' => $account->twitter_token->screen_name,
+      'type' => 'charity',
+      'uid' => $account->uid,
+      'status' => 1,
+    );
+
+    node_save($node);
+
+    drupal_set_message(t('We created a Charity profile account.'));
+  }
+  $logged_in = user_external_login($account, array());
+
+  drupal_set_message(t('Cool, you logged into your Charity account'));
+  drupal_goto('node/'. $node->nid . '/edit');
+}
+
+function sponsor_register_callback() {
+  require_once(drupal_get_path('module', 'twitter_integration') . '/twitter_integration.common.inc');
+  $authorize_url = twitter_generate_authorizeUrl('sponsor-register/complete');
+  return l(t('Login with Twitter to register as a SPONSOR'), $authorize_url, array('external' => TRUE));
+}
+
+function sponsor_register_complete_callback() {
+  require_once(drupal_get_path('module', 'twitter_integration') . '/twitter_integration.common.inc');
+
+  $account = twitter_return_load_user(SPONSOR_ROLE_ID);
+
+  if(!$node = node_load(array('type' => 'sponsor', 'uid' => $account->uid))) {
+    // save token relationship
+    twitter_user_save_oauth_token($account->uid, $account->twitter_token);
+
+    $node = (object) array(
+      'title' => $account->twitter_token->screen_name,
+      'type' => 'sponsor',
+      'uid' => $account->uid,
+      'status' => 1,
+    );
+
+    node_save($node);
+    drupal_set_message(t('We created a Sponsor profile account.'));
+  }
+  $logged_in = user_external_login($account, array());
+
+  drupal_set_message(t('Cool, you logged into your Sponsor account'));
+  drupal_goto('node/'. $node->nid . '/edit');
+}

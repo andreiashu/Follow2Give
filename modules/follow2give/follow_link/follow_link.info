@@ -1,0 +1,4 @@
+name = Follow Link
+description = Follow Link
+core = 6.x
+package = Follow2Give

@@ -1,0 +1,8 @@
+<?php
+
+/**
+function follow_link_preprocess_semanticviews_view_fields($view, $options, $row, $field_alias) {
+  dpm($field_alias);
+}
+ *
+ */

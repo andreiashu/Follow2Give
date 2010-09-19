@@ -1,0 +1,35 @@
+/* $Id: views-styles.css,v 1.1 2009/08/12 04:25:15 johnalbin Exp $ */
+
+/**
+ * @file
+ * Views Styling
+ */
+
+
+ .view-front-charities .row {
+   clear: both;
+   display: block;
+   overflow: hidden;
+   padding: 5px 0;
+}
+
+
+.view-front-charities .row span {
+  float: left;
+  display: block;
+}
+
+.view-front-charities .row .image {
+  padding: 0 10px 0 0;
+}
+
+.view-front-charities .row .title {
+  clear: right;
+  width: 295px;
+  font-weight: bold;
+}
+
+
+#front-panel .panel-col {
+  width: 45%;
+}

@@ -9,8 +9,40 @@ define('FRIENDSHIP_CREATE_URL', '/friendships/create.json');
 
 function twitter_integration_menu() {
   $items['twitter-login'] = array(
-    'title' => 'Twitter Login',
-    'page callback' => 'twitter_integration_login_callback',
+    'title' => 'Login/Create Account with your twitter account',
+    'page callback' => 'twitter_integration_twitter_login',
+    //'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+  $items['twitter-login/loggedin'] = array(
+    'title' => 'Login/Create Account with your twitter account',
+    'page callback' => 'twitter_integration_twitter_login_loggedin',
+    //'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+
+  //twitter-login/loggedin
+
+  $items['dofollow/%'] = array(
+    'title callback' => 'twitter_integration_follow_charity_sponsor_title',
+    'title arguments' => array(1),
+    //'title' => 'Follow Charity Sponsor',
+    'page callback' => 'twitter_integration_follow_charity_sponsor',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+    'file' => 'twitter_integration.pages.inc',
+  );
+  $items['dofollow/%/confirmed'] = array(
+    //'title callback' => 'twitter_integration_follow_confirmed',
+    //'title arguments' => array(1),
+    'title' => 'Follow Charity Sponsor',
+    'page callback' => 'twitter_integration_follow_confirmed',
+    'page arguments' => array(1),
     'type' => MENU_CALLBACK,
     'access arguments' => array('access content'),
     'file' => 'twitter_integration.pages.inc',
@@ -18,13 +50,6 @@ function twitter_integration_menu() {
   $items['store-twitter-credentials'] = array(
     'title' => 'Store Twitter Credentials',
     'page callback' => 'store_twitter_credentials_callback',
-    'type' => MENU_CALLBACK,
-    'access arguments' => array('access content'),
-    'file' => 'twitter_integration.pages.inc',
-  );
-  $items['twitter-loggedin'] = array(
-    'title' => 'Great you successfully logged in',
-    'page callback' => 'twitter_integration_loggedin_callback',
     'type' => MENU_CALLBACK,
     'access arguments' => array('access content'),
     'file' => 'twitter_integration.pages.inc',
@@ -41,6 +66,27 @@ function twitter_integration_menu() {
 
 
   return $items;
+}
+
+
+function twitter_integration_follow_charity_sponsor_title($charity_sponsor) {
+  list($sponsor_nid, $charity_nid) = explode(',', $charity_sponsor);
+
+  $charity_node = node_load($charity_nid);
+  $sponsor_node = node_load($sponsor_nid);
+
+  return t("Follow Charity: '@charity' and Sponsor: '@sponsor'?", array('@charity' => $charity_node->title, '@sponsor' => $sponsor_node->title));
+}
+
+
+function twitter_integration_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if($op == 'load') {
+    if($node->type == 'charity' || $node->type == 'sponsor') {
+      $node->twitter_data = (object) array(
+        
+      );
+    }
+  }
 }
 
 function twitter_integration_loggedin_callback() {
